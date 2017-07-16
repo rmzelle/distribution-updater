@@ -9,6 +9,7 @@ import fcntl
 import subprocess
 import dateutil.parser
 import pytz
+import shutil
 
 def git_cmd(root, params):
     return ["git", "-C", root] + params
@@ -22,19 +23,11 @@ def execute_subprocess(options, print_stdout=False):
         raise Exception("Error running process")
     return output[0]
 
-def write_readme_md():
-    text = """CSL Styles Distribution
-======================
-
-This repository is a copy of [citation-style-language/styles](https://github.com/citation-style-language/styles), refreshed on every commit, with each file's &lt;updated&gt; timestamp set to the file's last git commit time.
-
-Licensing
----------
-Please refer to https://github.com/citation-style-language/styles.
-"""
-
-    with open(os.path.join(DISTRIBUTION_STYLES_DIRECTORY, "README.md"), "w") as f:
-        f.write(text)
+def write_extra_files():
+    for file_name in os.listdir(EXTRA_FILES_DIRECTORY):
+        file_path = os.path.join(EXTRA_FILES_DIRECTORY, file_name)
+        if (os.path.isfile(file_path)):
+            shutil.copy(file_path, DISTRIBUTION_STYLES_DIRECTORY)
 
 def last_commit_hash():
     """ Returns the last commit of the ORIGINAL_STYLES_DIRECTORY. """
@@ -153,7 +146,7 @@ def prune_distribution_files(files_to_keep):
     return count
 
 def push_changes(dry_run):
-    write_readme_md()
+    write_extra_files()
 
     execute_subprocess(git_cmd(DISTRIBUTION_STYLES_DIRECTORY, ["add", "-A"]), True)
 
@@ -218,5 +211,7 @@ if __name__ == '__main__':
 
     ORIGINAL_STYLES_DIRECTORY = args['original_styles_directory']
     DISTRIBUTION_STYLES_DIRECTORY = args['distribution_styles_directory']
+
+    EXTRA_FILES_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'extra-files'))
 
     main(args['dry_run'], args['commit'])
